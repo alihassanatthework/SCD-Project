@@ -1,100 +1,98 @@
 
+#!/usr/bin/env python
 import os
 import django
+from django.conf import settings
 
+# Setup Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jobportal.settings')
 django.setup()
 
-from accounts.models import User, JobSeekerProfile, EmployerProfile
-from jobs.models import JobCategory, JobPosting
+from django.contrib.auth import get_user_model
+from jobs.models import Job, JobApplication
+from accounts.models import Profile
 
-# Create categories
-categories = [
-    {'name': 'Software Development', 'description': 'Software engineering and development roles'},
-    {'name': 'Data Science', 'description': 'Data analysis and machine learning roles'},
-    {'name': 'Design', 'description': 'UI/UX and graphic design roles'},
-    {'name': 'Marketing', 'description': 'Digital marketing and content roles'},
-    {'name': 'Sales', 'description': 'Sales and business development roles'},
-]
+User = get_user_model()
 
-for cat_data in categories:
-    JobCategory.objects.get_or_create(**cat_data)
+def create_sample_data():
+    print("Creating sample data...")
+    
+    # Create sample users if they don't exist
+    if not User.objects.filter(username='employer1').exists():
+        employer = User.objects.create_user(
+            username='employer1',
+            email='employer@example.com',
+            password='password123',
+            first_name='John',
+            last_name='Employer'
+        )
+        Profile.objects.create(
+            user=employer,
+            user_type='employer',
+            company_name='Tech Corp',
+            bio='Leading technology company'
+        )
+        print("Created employer user")
+    
+    if not User.objects.filter(username='jobseeker1').exists():
+        jobseeker = User.objects.create_user(
+            username='jobseeker1',
+            email='jobseeker@example.com',
+            password='password123',
+            first_name='Jane',
+            last_name='Seeker'
+        )
+        Profile.objects.create(
+            user=jobseeker,
+            user_type='job_seeker',
+            bio='Experienced software developer'
+        )
+        print("Created job seeker user")
+    
+    # Create sample jobs
+    employer = User.objects.filter(username='employer1').first()
+    if employer and Job.objects.count() < 5:
+        jobs_data = [
+            {
+                'title': 'Senior Frontend Developer',
+                'company': 'Tech Corp',
+                'location': 'San Francisco, CA',
+                'job_type': 'full_time',
+                'salary_min': 100000,
+                'salary_max': 150000,
+                'description': 'We are looking for an experienced frontend developer to join our team.',
+                'requirements': 'React, TypeScript, 3+ years experience'
+            },
+            {
+                'title': 'Backend Engineer',
+                'company': 'Tech Corp',
+                'location': 'Remote',
+                'job_type': 'full_time',
+                'salary_min': 90000,
+                'salary_max': 140000,
+                'description': 'Join our backend team to build scalable systems.',
+                'requirements': 'Python, Django, PostgreSQL, 2+ years experience'
+            },
+            {
+                'title': 'UI/UX Designer',
+                'company': 'Design Studio',
+                'location': 'New York, NY',
+                'job_type': 'contract',
+                'salary_min': 70000,
+                'salary_max': 100000,
+                'description': 'Create beautiful and functional user interfaces.',
+                'requirements': 'Figma, Adobe Creative Suite, Portfolio required'
+            }
+        ]
+        
+        for job_data in jobs_data:
+            Job.objects.create(
+                employer=employer,
+                **job_data
+            )
+        print(f"Created {len(jobs_data)} sample jobs")
+    
+    print("Sample data creation completed!")
 
-# Create sample employer
-employer_user = User.objects.create_user(
-    username='techcorp',
-    email='hr@techcorp.com',
-    password='password123',
-    user_type='employer',
-    first_name='Tech',
-    last_name='Corp'
-)
-
-employer_profile = EmployerProfile.objects.create(
-    user=employer_user,
-    company_name='TechCorp Solutions',
-    company_description='Leading technology solutions provider',
-    company_website='https://techcorp.com',
-    industry='Technology',
-    location='San Francisco, CA'
-)
-
-# Create sample job seeker
-jobseeker_user = User.objects.create_user(
-    username='johndoe',
-    email='john@example.com',
-    password='password123',
-    user_type='job_seeker',
-    first_name='John',
-    last_name='Doe'
-)
-
-jobseeker_profile = JobSeekerProfile.objects.create(
-    user=jobseeker_user,
-    bio='Experienced software developer with 5 years of experience',
-    skills='Python, JavaScript, React, Django',
-    experience_years=5,
-    location='San Francisco, CA',
-    expected_salary=100000
-)
-
-# Create sample jobs
-software_category = JobCategory.objects.get(name='Software Development')
-
-jobs = [
-    {
-        'title': 'Senior Full Stack Developer',
-        'description': 'We are looking for a senior full stack developer to join our team.',
-        'requirements': 'Bachelor\'s degree in Computer Science, 5+ years experience',
-        'responsibilities': 'Develop and maintain web applications, collaborate with team',
-        'employment_type': 'full_time',
-        'experience_level': 'senior',
-        'location': 'San Francisco, CA',
-        'salary_min': 120000,
-        'salary_max': 180000,
-        'skills_required': 'Python, Django, React, PostgreSQL',
-        'benefits': 'Health insurance, 401k, flexible hours'
-    },
-    {
-        'title': 'Frontend Developer',
-        'description': 'Join our frontend team to build amazing user interfaces.',
-        'requirements': 'Experience with React, TypeScript, and modern CSS',
-        'responsibilities': 'Build responsive web applications, work with designers',
-        'employment_type': 'full_time',
-        'experience_level': 'mid',
-        'location': 'Remote',
-        'salary_min': 80000,
-        'salary_max': 120000,
-        'skills_required': 'React, TypeScript, CSS, HTML',
-        'benefits': 'Remote work, health insurance, learning budget'
-    }
-]
-
-for job_data in jobs:
-    JobPosting.objects.create(
-        employer=employer_profile,
-        category=software_category,
-        **job_data
-    )
-
-print("Sample data created successfully!")
+if __name__ == '__main__':
+    create_sample_data()
