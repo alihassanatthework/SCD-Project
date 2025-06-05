@@ -1,15 +1,11 @@
-from django.urls import path
-from rest_framework.routers import DefaultRouter
-from . import views
 
-router = DefaultRouter()
-router.register(r'users', views.UserViewSet, basename='user')
-router.register(r'job-seekers', views.JobSeekerViewSet, basename='job-seeker')
-router.register(r'employers', views.EmployerViewSet, basename='employer')
-router.register(r'feedback', views.UserFeedbackViewSet, basename='feedback')
+from django.urls import path
+from . import views
 
 urlpatterns = [
     path('register/', views.RegisterView.as_view(), name='register'),
-    path('profile/', views.ProfileView.as_view(), name='profile'),
-    path('change-password/', views.ChangePasswordView.as_view(), name='change-password'),
-] + router.urls 
+    path('login/', views.LoginView.as_view(), name='login'),
+    path('profile/', views.user_profile, name='user_profile'),
+    path('profile/job-seeker/', views.JobSeekerProfileUpdateView.as_view(), name='job_seeker_profile_update'),
+    path('profile/employer/', views.EmployerProfileUpdateView.as_view(), name='employer_profile_update'),
+]

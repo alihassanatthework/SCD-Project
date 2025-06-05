@@ -1,51 +1,34 @@
 from django.db import models
-from accounts.models import User, JobSeeker, Employer
+from accounts.models import User, JobSeekerProfile
 from jobs.models import JobPosting
 
 class JobRecommendation(models.Model):
-    job_seeker = models.ForeignKey(JobSeeker, on_delete=models.CASCADE, related_name='job_recommendations')
+    job_seeker = models.ForeignKey(JobSeekerProfile, on_delete=models.CASCADE, related_name='recommendations')
     job = models.ForeignKey(JobPosting, on_delete=models.CASCADE, related_name='recommendations')
-    match_score = models.FloatField()
-    is_viewed = models.BooleanField(default=False)
-    is_applied = models.BooleanField(default=False)
+    score = models.FloatField(default=0.0)
+    reason = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         unique_together = ('job_seeker', 'job')
-    
-    def __str__(self):
-        return f"Job recommendation for {self.job_seeker.user.username} - {self.job.title}"
+        ordering = ['-score', '-created_at']
 
-class CandidateRecommendation(models.Model):
-    employer = models.ForeignKey(Employer, on_delete=models.CASCADE, related_name='candidate_recommendations')
-    candidate = models.ForeignKey(JobSeeker, on_delete=models.CASCADE, related_name='employer_recommendations')
-    job = models.ForeignKey(JobPosting, on_delete=models.CASCADE, related_name='candidate_recommendations')
-    match_score = models.FloatField()
-    is_viewed = models.BooleanField(default=False)
-    is_contacted = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        unique_together = ('employer', 'candidate', 'job')
-    
     def __str__(self):
-        return f"Candidate recommendation for {self.employer.company_name} - {self.candidate.user.username}"
+        return f"Recommendation for {self.job_seeker.user.username}: {self.job.title}"
 
-class RecommendationFeedback(models.Model):
-    FEEDBACK_TYPE_CHOICES = (
-        ('relevant', 'Relevant'),
-        ('irrelevant', 'Irrelevant'),
-        ('maybe', 'Maybe'),
+class UserActivityLog(models.Model):
+    ACTIVITY_TYPES = (
+        ('view_job', 'Viewed Job'),
+        ('apply_job', 'Applied to Job'),
+        ('wishlist_job', 'Added to Wishlist'),
+        ('search', 'Performed Search'),
     )
-    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recommendation_feedback')
-    job_recommendation = models.ForeignKey(JobRecommendation, on_delete=models.CASCADE, null=True, blank=True, related_name='feedback')
-    candidate_recommendation = models.ForeignKey(CandidateRecommendation, on_delete=models.CASCADE, null=True, blank=True, related_name='feedback')
-    feedback_type = models.CharField(max_length=20, choices=FEEDBACK_TYPE_CHOICES)
-    comments = models.TextField(blank=True)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activity_logs')
+    activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
+    job = models.ForeignKey(JobPosting, on_delete=models.CASCADE, null=True, blank=True)
+    search_query = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
-        return f"Feedback from {self.user.username} on recommendation {self.id}"
+        return f"{self.user.username} - {self.activity_type}"
